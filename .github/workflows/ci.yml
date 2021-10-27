@@ -15,7 +15,6 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: ${{ matrix.experimental }}
 
     strategy:
       matrix:

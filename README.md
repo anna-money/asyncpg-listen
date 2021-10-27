@@ -1,10 +1,10 @@
 # asyncpg-listen
 
 This library simplifies usage of listen/notify with [asyncpg](https://github.com/MagicStack/asyncpg):
-1. Handles lost of a connection
-1. Simplifies processing notifications from multiple channels
-1. Setups a timeout for receiving a notification
-1. Allows to receive all notifications/only last notification depends on `ListenPolicy`.
+1. Handles loss of a connection
+2. Simplifies notifications processing from multiple channels
+3. Setups a timeout for receiving a notification
+4. Allows to receive all notifications/only last notification depending on ListenPolicy.
 
 ```python
 import asyncio

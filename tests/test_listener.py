@@ -1,10 +1,12 @@
 import asyncio
 import contextlib
-from typing import Any, Dict, List
+from typing import Any, Awaitable, Callable, Dict, List
 
 import asyncpg
 
 import asyncpg_listen
+
+from .conftest import TcpProxy
 
 
 class Handler:
@@ -189,3 +191,45 @@ async def test_failing_handler(pg_server: Dict[str, Any]) -> None:
     assert not listener_task.done()
 
     await cancel_and_wait(listener_task)
+
+
+async def test_reconnect(
+    tcp_proxy: Callable[[int, int], Awaitable[TcpProxy]], unused_port: Callable[[], int], pg_server: Dict[str, Any]
+) -> None:
+    server_port = pg_server["pg_params"]["port"]
+    proxy_port = unused_port()
+
+    handler = Handler()
+    tcp_proxy = await tcp_proxy(proxy_port, server_port)
+    listener = asyncpg_listen.NotificationListener(
+        asyncpg_listen.connect_func(**(pg_server["pg_params"] | {"port": proxy_port}))
+    )
+
+    listener_task = asyncio.create_task(listener.run({"simple": handler.handle}, notification_timeout=1))
+
+    await asyncio.sleep(0.5)
+
+    connection = await asyncpg.connect(**pg_server["pg_params"])
+    try:
+        await connection.execute("NOTIFY simple, 'before'")
+    finally:
+        await asyncio.shield(connection.close())
+
+    await asyncio.sleep(0.5)
+    await tcp_proxy.disconnect()
+    await asyncio.sleep(1)
+
+    connection = await asyncpg.connect(**pg_server["pg_params"])
+    try:
+        await connection.execute("NOTIFY simple, 'after'")
+    finally:
+        await asyncio.shield(connection.close())
+
+    await asyncio.sleep(0.5)
+    await cancel_and_wait(listener_task)
+
+    assert handler.notifications == [
+        asyncpg_listen.Notification("simple", "before"),
+        asyncpg_listen.Timeout("simple"),
+        asyncpg_listen.Notification("simple", "after"),
+    ]

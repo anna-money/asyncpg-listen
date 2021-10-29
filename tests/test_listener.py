@@ -194,7 +194,10 @@ async def test_failing_handler(pg_server: Dict[str, Any]) -> None:
 
 
 async def test_reconnect(
-    tcp_proxy: Callable[[int, int], Awaitable[TcpProxy]], unused_port: Callable[[], int], pg_server: Dict[str, Any]
+    tcp_proxy: Callable[[int, int], Awaitable[TcpProxy]],
+    unused_port: Callable[[], int],
+    pg_server: Dict[str, Any],
+    caplog: Any,
 ) -> None:
     server_port = pg_server["pg_params"]["port"]
     proxy_port = unused_port()
@@ -233,3 +236,5 @@ async def test_reconnect(
         asyncpg_listen.Timeout("simple"),
         asyncpg_listen.Notification("simple", "after"),
     ]
+
+    assert any(record for record in caplog.records if "Connection was lost or not established" in record.message)

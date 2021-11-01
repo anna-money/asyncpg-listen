@@ -3,7 +3,7 @@ pytest-runner==5.3.1
 isort==5.9.3
 flake8==3.9.2
 mypy==0.910
-black==21.8b0
+black==21.10b0
 asyncpg==0.24.0
 setuptools==58.0.2
 wheel==0.37.0

@@ -5,6 +5,7 @@ flake8==3.9.2
 mypy==0.910
 black==21.10b0
 asyncpg==0.24.0
+async_timeout==4.0.0
 setuptools==58.4.0
 wheel==0.37.0
 twine==3.4.1

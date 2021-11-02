@@ -219,8 +219,8 @@ async def test_reconnect(
         await asyncio.shield(connection.close())
 
     await asyncio.sleep(0.5)
-    await tcp_proxy.disconnect()
-    await asyncio.sleep(1)
+    await tcp_proxy.drop_connections()
+    await asyncio.sleep(2)
 
     connection = await asyncpg.connect(**pg_server["pg_params"])
     try:

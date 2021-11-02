@@ -108,7 +108,7 @@ class TcpProxy:
             port=self.src_port,
         )
 
-    async def disconnect(self) -> None:
+    async def drop_connections(self) -> None:
         while self.connections:
             writer = self.connections.pop()
             writer.close()
@@ -160,4 +160,4 @@ async def tcp_proxy(loop: asyncio.AbstractEventLoop) -> AsyncIterable[Callable[[
         yield go
     finally:
         if proxy is not None:
-            await asyncio.shield(proxy.disconnect())
+            await asyncio.shield(proxy.drop_connections())

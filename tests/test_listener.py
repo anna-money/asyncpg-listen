@@ -231,10 +231,7 @@ async def test_reconnect(
     await asyncio.sleep(0.5)
     await cancel_and_wait(listener_task)
 
-    assert handler.notifications == [
-        asyncpg_listen.Notification("simple", "before"),
-        asyncpg_listen.Timeout("simple"),
-        asyncpg_listen.Notification("simple", "after"),
-    ]
+    assert asyncpg_listen.Notification("simple", "before") in handler.notifications
+    assert asyncpg_listen.Notification("simple", "after") in handler.notifications
 
     assert any(record for record in caplog.records if "Connection was lost or not established" in record.message)

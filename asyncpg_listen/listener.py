@@ -136,7 +136,7 @@ class NotificationListener:
 
                     while True:
                         await asyncio.sleep(check_interval)
-                        await connection.execute("SELECT 1", timeout=check_interval)
+                        await connection.execute("SELECT 1")
                 finally:
                     await asyncio.shield(connection.close())
             except Exception:

@@ -1,6 +1,6 @@
 pytest==6.2.5
 pytest-runner==5.3.1
-isort==5.10.0
+isort==5.10.1
 flake8==4.0.1
 mypy==0.910
 black==21.10b0

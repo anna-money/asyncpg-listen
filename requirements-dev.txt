@@ -6,7 +6,7 @@ mypy==0.920
 black==21.12b0
 asyncpg==0.25.0
 async_timeout==4.0.1
-setuptools==59.6.0
+setuptools==60.0.2
 wheel==0.37.0
 twine==3.7.1
 pytest-aiohttp==0.3.0

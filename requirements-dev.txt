@@ -9,6 +9,6 @@ async_timeout==4.0.2
 setuptools==60.3.1
 wheel==0.37.1
 twine==3.7.1
-pytest-aiohttp==0.3.0
+pytest-aiohttp==1.0.2
 docker==5.0.3
 psycopg2==2.9.3

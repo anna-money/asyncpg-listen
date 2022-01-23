@@ -206,7 +206,7 @@ async def test_reconnect(
     handler = Handler()
     tcp_proxy = await tcp_proxy(proxy_port, pg_11.port)
     listener = asyncpg_listen.NotificationListener(
-        asyncpg_listen.connect_func(**(dataclasses.asdict(pg_11)) | {"port": proxy_port})
+        asyncpg_listen.connect_func(**{**(dataclasses.asdict(pg_11)), **{"port": proxy_port}})
     )
 
     listener_task = asyncio.create_task(listener.run({"simple": handler.handle}, notification_timeout=1))

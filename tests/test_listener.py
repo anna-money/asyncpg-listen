@@ -1,8 +1,10 @@
 import asyncio
 import contextlib
-from typing import Any, Awaitable, Callable, Dict, List
+import dataclasses
+from typing import Any, Awaitable, Callable, List
 
 import asyncpg
+import pytest_pg
 
 import asyncpg_listen
 
@@ -25,10 +27,10 @@ async def cancel_and_wait(future: "asyncio.Future[None]") -> None:
         await future
 
 
-async def test_two_inactive_channels(pg_server: Dict[str, Any]) -> None:
+async def test_two_inactive_channels(pg_11: pytest_pg.PG) -> None:
     handler_1 = Handler()
     handler_2 = Handler()
-    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**pg_server["pg_params"]))
+    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**dataclasses.asdict(pg_11)))
     listener_task = asyncio.create_task(
         listener.run({"inactive_1": handler_1.handle, "inactive_2": handler_2.handle}, notification_timeout=1)
     )
@@ -40,14 +42,14 @@ async def test_two_inactive_channels(pg_server: Dict[str, Any]) -> None:
     assert handler_2.notifications == [asyncpg_listen.Timeout("inactive_2")]
 
 
-async def test_one_active_channel_and_one_passive_channel(pg_server: Dict[str, Any]) -> None:
+async def test_one_active_channel_and_one_passive_channel(pg_11: pytest_pg.PG) -> None:
     active_handler = Handler()
     inactive_handler = Handler()
-    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**pg_server["pg_params"]))
+    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**dataclasses.asdict(pg_11)))
     listener_task = asyncio.create_task(
         listener.run({"active": active_handler.handle, "inactive": inactive_handler.handle}, notification_timeout=1)
     )
-    connection = await asyncpg.connect(**pg_server["pg_params"])
+    connection = await asyncpg.connect(**dataclasses.asdict(pg_11))
     try:
         await asyncio.sleep(0.75)
         await connection.execute("NOTIFY active, '1'")
@@ -67,16 +69,16 @@ async def test_one_active_channel_and_one_passive_channel(pg_server: Dict[str, A
     ]
 
 
-async def test_two_active_channels(pg_server: Dict[str, Any]) -> None:
+async def test_two_active_channels(pg_11: pytest_pg.PG) -> None:
     handler_1 = Handler()
     handler_2 = Handler()
-    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**pg_server["pg_params"]))
+    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**dataclasses.asdict(pg_11)))
     listener_task = asyncio.create_task(
         listener.run({"active_1": handler_1.handle, "active_2": handler_2.handle}, notification_timeout=1)
     )
     await asyncio.sleep(0.1)
 
-    connection = await asyncpg.connect(**pg_server["pg_params"])
+    connection = await asyncpg.connect(**dataclasses.asdict(pg_11))
     try:
         await connection.execute("NOTIFY active_1, '1'")
         await connection.execute("NOTIFY active_2, '2'")
@@ -98,15 +100,15 @@ async def test_two_active_channels(pg_server: Dict[str, Any]) -> None:
     ]
 
 
-async def test_listen_policy_last(pg_server: Dict[str, Any]) -> None:
+async def test_listen_policy_last(pg_11: pytest_pg.PG) -> None:
     handler = Handler(delay=0.1)
-    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**pg_server["pg_params"]))
+    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**dataclasses.asdict(pg_11)))
     listener_task = asyncio.create_task(
         listener.run({"simple": handler.handle}, policy=asyncpg_listen.ListenPolicy.LAST, notification_timeout=1)
     )
     await asyncio.sleep(0.1)
 
-    connection = await asyncpg.connect(**pg_server["pg_params"])
+    connection = await asyncpg.connect(**dataclasses.asdict(pg_11))
     try:
         for i in range(10):
             await connection.execute(f"NOTIFY simple, '{i}'")
@@ -122,13 +124,13 @@ async def test_listen_policy_last(pg_server: Dict[str, Any]) -> None:
     ]
 
 
-async def test_listen_policy_all(pg_server: Dict[str, Any]) -> None:
+async def test_listen_policy_all(pg_11: pytest_pg.PG) -> None:
     handler = Handler(delay=0.05)
-    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**pg_server["pg_params"]))
+    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**dataclasses.asdict(pg_11)))
     listener_task = asyncio.create_task(listener.run({"simple": handler.handle}, notification_timeout=1))
     await asyncio.sleep(0.1)
 
-    connection = await asyncpg.connect(**pg_server["pg_params"])
+    connection = await asyncpg.connect(**dataclasses.asdict(pg_11))
     try:
         for i in range(10):
             await connection.execute(f"NOTIFY simple, '{i}'")
@@ -169,16 +171,16 @@ async def test_failed_to_connect_no_timeout() -> None:
     assert handler.notifications == []
 
 
-async def test_failing_handler(pg_server: Dict[str, Any]) -> None:
+async def test_failing_handler(pg_11: pytest_pg.PG) -> None:
     async def handle(_: asyncpg_listen.NotificationOrTimeout) -> None:
         raise RuntimeError("Oops")
 
-    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**pg_server["pg_params"]))
+    listener = asyncpg_listen.NotificationListener(asyncpg_listen.connect_func(**dataclasses.asdict(pg_11)))
     listener_task = asyncio.create_task(listener.run({"simple": handle}, notification_timeout=1))
 
     await asyncio.sleep(0.1)
 
-    connection = await asyncpg.connect(**pg_server["pg_params"])
+    connection = await asyncpg.connect(**dataclasses.asdict(pg_11))
     try:
         await connection.execute("NOTIFY simple")
         await connection.execute("NOTIFY simple")
@@ -196,23 +198,22 @@ async def test_failing_handler(pg_server: Dict[str, Any]) -> None:
 async def test_reconnect(
     tcp_proxy: Callable[[int, int], Awaitable[TcpProxy]],
     unused_port: Callable[[], int],
-    pg_server: Dict[str, Any],
+    pg_11: pytest_pg.PG,
     caplog: Any,
 ) -> None:
-    server_port = pg_server["pg_params"]["port"]
     proxy_port = unused_port()
 
     handler = Handler()
-    tcp_proxy = await tcp_proxy(proxy_port, server_port)
+    tcp_proxy = await tcp_proxy(proxy_port, pg_11.port)
     listener = asyncpg_listen.NotificationListener(
-        asyncpg_listen.connect_func(**(pg_server["pg_params"] | {"port": proxy_port}))
+        asyncpg_listen.connect_func(**(dataclasses.asdict(pg_11)) | {"port": proxy_port})
     )
 
     listener_task = asyncio.create_task(listener.run({"simple": handler.handle}, notification_timeout=1))
 
     await asyncio.sleep(0.5)
 
-    connection = await asyncpg.connect(**pg_server["pg_params"])
+    connection = await asyncpg.connect(**dataclasses.asdict(pg_11))
     try:
         await connection.execute("NOTIFY simple, 'before'")
     finally:
@@ -222,7 +223,7 @@ async def test_reconnect(
     await tcp_proxy.drop_connections()
     await asyncio.sleep(2)
 
-    connection = await asyncpg.connect(**pg_server["pg_params"])
+    connection = await asyncpg.connect(**dataclasses.asdict(pg_11))
     try:
         await connection.execute("NOTIFY simple, 'after'")
     finally:

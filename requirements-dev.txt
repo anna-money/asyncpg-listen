@@ -1,4 +1,6 @@
 pytest==6.2.5
+pytest-aiohttp==1.0.2
+pytest-pg==0.0.12
 pytest-runner==5.3.1
 isort==5.10.1
 flake8==4.0.1
@@ -9,6 +11,3 @@ async_timeout==4.0.2
 setuptools==60.5.0
 wheel==0.37.1
 twine==3.7.1
-pytest-aiohttp==1.0.2
-docker==5.0.3
-psycopg2==2.9.3

@@ -1,3 +1,8 @@
+## v0.0.4 (2022-01-24)
+
+* [Reset failed attempts counter on successful connection](https://github.com/anna-money/asyncpg-listen/pull/58)
+
+
 ## v0.0.3 (2022-01-23)
 
 * [Support python 3.8](https://github.com/anna-money/asyncpg-listen/pull/55)

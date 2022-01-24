@@ -132,6 +132,7 @@ class NotificationListener:
         while True:
             try:
                 connection = await self._connect()
+                failed_connect_attempts = 0
                 try:
                     for channel, queue in queue_per_channel.items():
                         await connection.add_listener(channel, self._get_push_callback(queue))

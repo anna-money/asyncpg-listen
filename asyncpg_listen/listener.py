@@ -2,7 +2,7 @@ import asyncio
 import dataclasses
 import enum
 import logging
-from typing import Any, Awaitable, Callable, Dict, Optional, Union
+from typing import Any, Callable, Coroutine, Dict, Optional, Union
 
 import async_timeout
 import asyncpg
@@ -33,9 +33,9 @@ class Notification:
     payload: Optional[str]
 
 
-ConnectFunc = Callable[[], Awaitable[asyncpg.Connection]]
+ConnectFunc = Callable[[], Coroutine[Any, Any, asyncpg.Connection]]
 NotificationOrTimeout = Union[Notification, Timeout]
-NotificationHandler = Callable[[NotificationOrTimeout], Awaitable]
+NotificationHandler = Callable[[NotificationOrTimeout], Coroutine]
 
 NO_TIMEOUT: float = -1
 

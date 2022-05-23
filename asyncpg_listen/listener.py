@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import dataclasses
 import enum
 import logging
@@ -87,9 +88,15 @@ class NotificationListener:
         try:
             await asyncio.gather(read_notifications_task, *process_notifications_tasks)
         finally:
-            read_notifications_task.cancel()
-            for process_notifications_task in process_notifications_tasks:
-                process_notifications_task.cancel()
+            await self._cancel_and_await_tasks([read_notifications_task, *process_notifications_tasks])
+
+    @staticmethod
+    async def _cancel_and_await_tasks(tasks: list[asyncio.Task[None]]) -> None:
+        for t in tasks:
+            t.cancel()
+        for t in tasks:
+            with contextlib.suppress(asyncio.CancelledError):
+                await t
 
     @staticmethod
     async def _process_notifications(

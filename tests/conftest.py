@@ -55,6 +55,8 @@ class TcpProxy:
                 await writer.drain()
         finally:
             writer.close()
+            if hasattr(writer, "wait_closed"):
+                await writer.wait_closed()
 
     async def _handle_client(
         self,

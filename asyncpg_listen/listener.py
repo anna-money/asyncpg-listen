@@ -91,7 +91,7 @@ class NotificationListener:
             await self._cancel_and_await_tasks([read_notifications_task, *process_notifications_tasks])
 
     @staticmethod
-    async def _cancel_and_await_tasks(tasks: List[asyncio.Task[None]]) -> None:
+    async def _cancel_and_await_tasks(tasks: "List[asyncio.Task[None]]") -> None:
         for t in tasks:
             t.cancel()
         for t in tasks:

@@ -3,7 +3,7 @@ import contextlib
 import dataclasses
 import enum
 import logging
-from typing import Any, Callable, Coroutine, Dict, Optional, Union
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 
 import async_timeout
 import asyncpg
@@ -91,7 +91,7 @@ class NotificationListener:
             await self._cancel_and_await_tasks([read_notifications_task, *process_notifications_tasks])
 
     @staticmethod
-    async def _cancel_and_await_tasks(tasks: list[asyncio.Task[None]]) -> None:
+    async def _cancel_and_await_tasks(tasks: List[asyncio.Task[None]]) -> None:
         for t in tasks:
             t.cancel()
         for t in tasks:

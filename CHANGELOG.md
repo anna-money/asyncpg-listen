@@ -1,3 +1,8 @@
+## v0.0.5 (2022-05-23)
+
+* [Wait for tasks cancellation](https://github.com/anna-money/asyncpg-listen/pull/96)
+
+
 ## v0.0.4 (2022-01-24)
 
 * [Reset failed attempts counter on successful connection](https://github.com/anna-money/asyncpg-listen/pull/58)

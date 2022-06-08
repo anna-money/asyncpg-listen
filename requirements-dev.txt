@@ -1,6 +1,6 @@
 pytest==7.1.2
 pytest-aiohttp==1.0.4
-pytest-pg==0.0.12
+pytest-pg==0.0.13
 pytest-runner==6.0.0
 isort==5.10.1
 flake8==4.0.1

@@ -3,7 +3,7 @@ pytest-aiohttp==1.0.4
 pytest-pg==0.0.13
 pytest-runner==6.0.0
 isort==5.10.1
-flake8==4.0.1
+flake8==5.0.3
 mypy==0.971
 black==22.6.0
 asyncpg==0.26.0

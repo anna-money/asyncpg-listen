@@ -4,7 +4,7 @@ pytest-pg==0.0.14
 pytest-runner==6.0.0
 isort==5.10.1
 flake8==5.0.4
-mypy==0.971
+mypy==0.982
 black==22.8.0
 asyncpg==0.26.0
 async_timeout==4.0.2

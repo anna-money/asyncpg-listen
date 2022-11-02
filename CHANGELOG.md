@@ -1,3 +1,8 @@
+## v0.0.6 (2022-11-02)
+
+* [Add support of python 3.11](https://github.com/anna-money/asyncpg-listen/pull/135)
+
+
 ## v0.0.5 (2022-05-23)
 
 * [Wait for tasks cancellation](https://github.com/anna-money/asyncpg-listen/pull/96)

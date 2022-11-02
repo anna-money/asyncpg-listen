@@ -3,6 +3,7 @@ import contextlib
 import dataclasses
 import enum
 import logging
+import sys
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 
 if sys.version_info < (3, 11, 0):

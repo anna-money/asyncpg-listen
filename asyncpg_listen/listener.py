@@ -7,9 +7,9 @@ import sys
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 
 if sys.version_info < (3, 11, 0):
-    import async_timeout
+    from async_timeout import timeout
 else:
-    import asyncio as async_timeout
+    from asyncio import timeout  # type: ignore
 
 import asyncpg
 
@@ -120,7 +120,7 @@ class NotificationListener:
                     notification = await notifications.get()
                 else:
                     try:
-                        async with async_timeout.timeout(notification_timeout):
+                        async with timeout(notification_timeout):
                             notification = await notifications.get()
                     except asyncio.TimeoutError:
                         notification = Timeout(channel)

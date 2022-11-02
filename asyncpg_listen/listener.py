@@ -3,9 +3,14 @@ import contextlib
 import dataclasses
 import enum
 import logging
+import sys
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 
-import async_timeout
+if sys.version_info < (3, 11, 0):
+    from async_timeout import timeout
+else:
+    from asyncio import timeout  # type: ignore
+
 import asyncpg
 
 logger = logging.getLogger(__package__)
@@ -115,7 +120,7 @@ class NotificationListener:
                     notification = await notifications.get()
                 else:
                     try:
-                        async with async_timeout.timeout(notification_timeout):
+                        async with timeout(notification_timeout):
                             notification = await notifications.get()
                     except asyncio.TimeoutError:
                         notification = Timeout(channel)

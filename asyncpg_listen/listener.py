@@ -5,7 +5,11 @@ import enum
 import logging
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 
-import async_timeout
+if sys.version_info < (3, 11, 0):
+    import async_timeout
+else:
+    import asyncio as async_timeout
+
 import asyncpg
 
 logger = logging.getLogger(__package__)

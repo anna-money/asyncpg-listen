@@ -10,4 +10,4 @@ asyncpg==0.27.0
 async_timeout==4.0.2; python_version<"3.11"
 setuptools==65.6.3
 wheel==0.38.4
-twine==4.0.1
+twine==4.0.2

@@ -11,3 +11,4 @@ async-timeout==4.0.2; python_version<"3.11"
 setuptools==68.0.0
 wheel==0.41.1
 twine==4.0.2
+opentelemetry-api>=1.19

@@ -6,6 +6,8 @@ import logging
 import sys
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 
+import opentelemetry.trace
+
 if sys.version_info < (3, 11, 0):
     from async_timeout import timeout
 else:
@@ -54,11 +56,12 @@ def connect_func(*args: Any, **kwargs: Any) -> ConnectFunc:
 
 
 class NotificationListener:
-    __slots__ = ("_connect", "_reconnect_delay")
+    __slots__ = ("_connect", "_reconnect_delay", "_tracer")
 
     def __init__(self, connect: ConnectFunc, reconnect_delay: float = 5) -> None:
         self._reconnect_delay = reconnect_delay
         self._connect = connect
+        self._tracer = None
 
     async def run(
         self,
@@ -103,8 +106,8 @@ class NotificationListener:
             with contextlib.suppress(asyncio.CancelledError):
                 await t
 
-    @staticmethod
     async def _process_notifications(
+        self,
         channel: str,
         *,
         notifications: "asyncio.Queue[Notification]",
@@ -136,7 +139,9 @@ class NotificationListener:
             # to have independent async context per run
             # to protect from misuse of contextvars
             try:
-                await asyncio.create_task(handler(notification), name=f"{__package__}.{channel}")
+                await asyncio.create_task(
+                    self._process_notification(handler, notification), name=f"{__package__}.{channel}"
+                )
             except Exception:
                 logger.exception("Failed to handle %s", notification)
 
@@ -169,3 +174,16 @@ class NotificationListener:
             queue.put_nowait(Notification(channel, payload))
 
         return _push
+
+    async def _process_notification(self, handler: NotificationHandler, notification: NotificationOrTimeout) -> None:
+        if self._tracer is None:
+            self._tracer = opentelemetry.trace.get_tracer(__package__)
+
+        match notification:
+            case Timeout(channel):
+                name = f"Notification timeout #{channel}"
+            case Notification(channel, _):
+                name = f"Notification #{channel}"
+
+        with self._tracer.start_as_current_span(name=name, kind=opentelemetry.trace.SpanKind.INTERNAL):
+            await handler(notification)

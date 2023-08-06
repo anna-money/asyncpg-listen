@@ -4,8 +4,10 @@ import dataclasses
 import enum
 import logging
 import sys
+import time
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 
+import opentelemetry.metrics
 import opentelemetry.trace
 
 if sys.version_info < (3, 11, 0):
@@ -56,12 +58,14 @@ def connect_func(*args: Any, **kwargs: Any) -> ConnectFunc:
 
 
 class NotificationListener:
-    __slots__ = ("_connect", "_reconnect_delay", "_tracer")
+    __slots__ = ("_connect", "_reconnect_delay", "_tracer", "_meter", "_notification_histogram")
 
     def __init__(self, connect: ConnectFunc, reconnect_delay: float = 5) -> None:
         self._reconnect_delay = reconnect_delay
         self._connect = connect
         self._tracer = None
+        self._meter = None
+        self._notification_histogram = None
 
     async def run(
         self,
@@ -178,6 +182,10 @@ class NotificationListener:
     async def _process_notification(self, handler: NotificationHandler, notification: NotificationOrTimeout) -> None:
         if self._tracer is None:
             self._tracer = opentelemetry.trace.get_tracer(__package__)
+        if self._meter is None:
+            self._meter = opentelemetry.metrics.get_meter(__package__)
+        if self._notification_histogram is None:
+            self._notification_histogram = self._meter.create_histogram("asyncpg_listener_notification")
 
         if isinstance(notification, Timeout):
             name = f"Notification timeout #{notification.channel}"
@@ -186,5 +194,16 @@ class NotificationListener:
         else:
             raise TypeError(f"Unexpected notification type: {type(notification)}")
 
-        with self._tracer.start_as_current_span(name=name, kind=opentelemetry.trace.SpanKind.INTERNAL):
-            await handler(notification)
+        started_at = time.time_ns()
+
+        with self._tracer.start_as_current_span(
+            name=name,
+            kind=opentelemetry.trace.SpanKind.INTERNAL,
+            start_time=started_at,
+            attributes={"channel": notification.channel},
+        ):
+            try:
+                await handler(notification)
+            finally:
+                elapsed = max(0, time.time_ns() - started_at)
+                self._notification_histogram.record(elapsed, {"channel": notification.channel})

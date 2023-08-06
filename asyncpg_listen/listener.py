@@ -113,7 +113,7 @@ class NotificationListener:
         notification_timeout: float,
     ) -> None:
         while True:
-            notification: NotificationOrTimeout
+            notification: NotificationOrTimeout | None = None
 
             if notifications.empty():
                 if notification_timeout == NO_TIMEOUT:
@@ -129,6 +129,9 @@ class NotificationListener:
                     notification = notifications.get_nowait()
                     if policy == ListenPolicy.ALL:
                         break
+
+            if notification is None:
+                continue
 
             # to have independent async context per run
             # to protect from misuse of contextvars

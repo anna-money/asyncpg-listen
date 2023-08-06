@@ -204,7 +204,7 @@ async def test_reconnect(
     proxy_port = unused_port()
 
     handler = Handler()
-    tcp_proxy = await tcp_proxy(proxy_port, pg_11.port)
+    proxy = await tcp_proxy(proxy_port, pg_11.port)
     listener = asyncpg_listen.NotificationListener(
         asyncpg_listen.connect_func(**{**(dataclasses.asdict(pg_11)), **{"port": proxy_port}})
     )
@@ -220,7 +220,7 @@ async def test_reconnect(
         await asyncio.shield(connection.close())
 
     await asyncio.sleep(0.5)
-    await tcp_proxy.drop_connections()
+    await proxy.drop_connections()
     await asyncio.sleep(2)
 
     connection = await asyncpg.connect(**dataclasses.asdict(pg_11))

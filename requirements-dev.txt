@@ -8,6 +8,6 @@ pyright==1.1.320
 black==23.7.0
 asyncpg==0.27.0
 async-timeout==4.0.2; python_version<"3.11"
-setuptools==67.8.0
+setuptools==68.0.0
 wheel==0.41.1
 twine==4.0.2

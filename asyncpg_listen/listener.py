@@ -4,7 +4,11 @@ import dataclasses
 import enum
 import logging
 import sys
+import time
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
+
+import opentelemetry.metrics
+import opentelemetry.trace
 
 if sys.version_info < (3, 11, 0):
     from async_timeout import timeout
@@ -54,11 +58,14 @@ def connect_func(*args: Any, **kwargs: Any) -> ConnectFunc:
 
 
 class NotificationListener:
-    __slots__ = ("_connect", "_reconnect_delay")
+    __slots__ = ("_connect", "_reconnect_delay", "_tracer", "_meter", "_notification_histogram")
 
     def __init__(self, connect: ConnectFunc, reconnect_delay: float = 5) -> None:
         self._reconnect_delay = reconnect_delay
         self._connect = connect
+        self._tracer = None
+        self._meter = None
+        self._notification_histogram = None
 
     async def run(
         self,
@@ -103,8 +110,8 @@ class NotificationListener:
             with contextlib.suppress(asyncio.CancelledError):
                 await t
 
-    @staticmethod
     async def _process_notifications(
+        self,
         channel: str,
         *,
         notifications: "asyncio.Queue[Notification]",
@@ -136,7 +143,9 @@ class NotificationListener:
             # to have independent async context per run
             # to protect from misuse of contextvars
             try:
-                await asyncio.create_task(handler(notification), name=f"{__package__}.{channel}")
+                await asyncio.create_task(
+                    self._process_notification(handler, notification), name=f"{__package__}.{channel}"
+                )
             except Exception:
                 logger.exception("Failed to handle %s", notification)
 
@@ -169,3 +178,34 @@ class NotificationListener:
             queue.put_nowait(Notification(channel, payload))
 
         return _push
+
+    async def _process_notification(self, handler: NotificationHandler, notification: NotificationOrTimeout) -> None:
+        if self._tracer is None:
+            self._tracer = opentelemetry.trace.get_tracer(__package__)
+        if self._meter is None:
+            self._meter = opentelemetry.metrics.get_meter(__package__)
+        if self._notification_histogram is None:
+            self._notification_histogram = self._meter.create_histogram("asyncpg_listener_latency")
+
+        start_time = time.time_ns()
+
+        with self._tracer.start_as_current_span(
+            name=self._get_span_name(notification),
+            kind=opentelemetry.trace.SpanKind.INTERNAL,
+            start_time=start_time,
+            attributes={"channel": notification.channel},
+        ):
+            try:
+                await handler(notification)
+            finally:
+                elapsed = max(0, time.time_ns() - start_time)
+                self._notification_histogram.record(elapsed, {"channel": notification.channel})
+
+    @staticmethod
+    def _get_span_name(notification: NotificationOrTimeout) -> str:
+        if isinstance(notification, Timeout):
+            return f"Notification timeout #{notification.channel}"
+        if isinstance(notification, Notification):
+            return f"Notification #{notification.channel}"
+
+        raise TypeError(f"Unexpected notification type: {type(notification)}")

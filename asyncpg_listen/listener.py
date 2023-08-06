@@ -187,23 +187,25 @@ class NotificationListener:
         if self._notification_histogram is None:
             self._notification_histogram = self._meter.create_histogram("asyncpg_listener_notification")
 
-        if isinstance(notification, Timeout):
-            name = f"Notification timeout #{notification.channel}"
-        elif isinstance(notification, Notification):
-            name = f"Notification #{notification.channel}"
-        else:
-            raise TypeError(f"Unexpected notification type: {type(notification)}")
-
-        started_at = time.time_ns()
+        start_time = time.time_ns()
 
         with self._tracer.start_as_current_span(
-            name=name,
+            name=self._get_span_name(notification),
             kind=opentelemetry.trace.SpanKind.INTERNAL,
-            start_time=started_at,
+            start_time=start_time,
             attributes={"channel": notification.channel},
         ):
             try:
                 await handler(notification)
             finally:
-                elapsed = max(0, time.time_ns() - started_at)
+                elapsed = max(0, time.time_ns() - start_time)
                 self._notification_histogram.record(elapsed, {"channel": notification.channel})
+
+    @staticmethod
+    def _get_span_name(notification: NotificationOrTimeout) -> str:
+        if isinstance(notification, Timeout):
+            return f"Notification timeout #{notification.channel}"
+        if isinstance(notification, Notification):
+            return f"Notification #{notification.channel}"
+
+        raise TypeError(f"Unexpected notification type: {type(notification)}")

@@ -185,7 +185,7 @@ class NotificationListener:
         if self._meter is None:
             self._meter = opentelemetry.metrics.get_meter(__package__)
         if self._notification_histogram is None:
-            self._notification_histogram = self._meter.create_histogram("asyncpg_listener_notification")
+            self._notification_histogram = self._meter.create_histogram("asyncpg_listener_latency")
 
         start_time = time.time_ns()
 

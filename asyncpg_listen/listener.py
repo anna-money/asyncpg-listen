@@ -179,11 +179,12 @@ class NotificationListener:
         if self._tracer is None:
             self._tracer = opentelemetry.trace.get_tracer(__package__)
 
-        match notification:
-            case Timeout(channel):
-                name = f"Notification timeout #{channel}"
-            case Notification(channel, _):
-                name = f"Notification #{channel}"
+        if isinstance(notification, Timeout):
+            name = f"Notification timeout #{notification.channel}"
+        elif isinstance(notification, Notification):
+            name = f"Notification #{notification.channel}"
+        else:
+            raise TypeError(f"Unexpected notification type: {type(notification)}")
 
         with self._tracer.start_as_current_span(name=name, kind=opentelemetry.trace.SpanKind.INTERNAL):
             await handler(notification)

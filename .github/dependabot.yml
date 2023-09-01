@@ -4,5 +4,8 @@ updates:
   directory: "/"
   schedule:
     interval: monthly
-    time: "00:00"
   open-pull-requests-limit: 10
+  groups:
+    packages:
+      patterns:
+        - "*"

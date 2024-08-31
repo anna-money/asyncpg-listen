@@ -1,6 +1,7 @@
 ## unreleased
 
 * [Implement metrics/tracing on top of OpenTelemetry](https://github.com/anna-money/asyncpg-listen/pull/199)
+* [Support python 3.12 and end support of 3.8](https://github.com/anna-money/asyncpg-listen/pull/211)
 
 
 ## v0.0.6 (2022-11-02)

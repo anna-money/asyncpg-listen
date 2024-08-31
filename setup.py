@@ -6,7 +6,7 @@ from setuptools import setup
 install_requires = [
     "asyncpg>=0.27.0",
     "opentelemetry-api>=1.19",
-    "async_timeout>=3.0,<5.0; python_version<'3.11'"
+    "async_timeout>=3.0,<5.0; python_version<'3.12'"
 ]
 
 
@@ -42,7 +42,7 @@ setup(
     long_description_content_type="text/markdown",
     platforms=["macOS", "POSIX", "Windows"],
     author="Yury Pliner",
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     project_urls={},
     url="https://github.com/Pliner/asyncpg-listen",
     author_email="yury.pliner@gmail.com",
@@ -57,10 +57,10 @@ setup(
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
         "Environment :: Web Environment",
         "Development Status :: 5 - Production/Stable",

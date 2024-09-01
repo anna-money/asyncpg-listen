@@ -140,12 +140,15 @@ class NotificationListener:
             if notification is None:
                 continue
 
-            # to have independent async context per run
-            # to protect from misuse of contextvars
             try:
-                await asyncio.create_task(
-                    self._process_notification(handler, notification), name=f"{__package__}.{channel}"
-                )
+                # to have independent async context per run
+                # to protect from misuse of contextvars
+                coro = self._process_notification(handler, notification)
+                if sys.version_info >= (3, 12):
+                    task = asyncio.Task(coro, eager_start=True, name=f"{__package__}.{channel}")
+                else:
+                    task = asyncio.create_task(coro, name=f"{__package__}.{channel}")
+                await task
             except Exception:
                 logger.exception("Failed to handle %s", notification)
 

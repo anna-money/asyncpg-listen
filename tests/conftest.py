@@ -77,7 +77,7 @@ class TcpProxy:
 
 
 @pytest.fixture
-async def tcp_proxy(loop: asyncio.AbstractEventLoop) -> AsyncIterable[Callable[[int, int], Awaitable[TcpProxy]]]:
+async def tcp_proxy(event_loop: asyncio.AbstractEventLoop) -> AsyncIterable[Callable[[int, int], Awaitable[TcpProxy]]]:
     proxy: Optional[TcpProxy] = None
 
     async def go(src_port: int, dst_port: int) -> TcpProxy:

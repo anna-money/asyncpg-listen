@@ -119,6 +119,17 @@ class NotificationListener:
         policy: ListenPolicy,
         notification_timeout: float,
     ) -> None:
+        if sys.version_info >= (3, 12):
+            loop = asyncio.get_running_loop()
+
+            async def run_coro(c: Coroutine) -> None:
+                await asyncio.Task(c, loop=loop, eager_start=True, name=f"{__package__}.{channel}")
+
+        else:
+
+            async def run_coro(c: Coroutine) -> None:
+                await asyncio.create_task(c, name=f"{__package__}.{channel}")
+
         while True:
             notification: NotificationOrTimeout | None = None
 
@@ -143,12 +154,7 @@ class NotificationListener:
             try:
                 # to have independent async context per run
                 # to protect from misuse of contextvars
-                coro = self._process_notification(handler, notification)
-                if sys.version_info >= (3, 12):
-                    task = asyncio.Task(coro, eager_start=True, name=f"{__package__}.{channel}")
-                else:
-                    task = asyncio.create_task(coro, name=f"{__package__}.{channel}")
-                await task
+                await run_coro(self._process_notification(handler, notification))
             except Exception:
                 logger.exception("Failed to handle %s", notification)
 

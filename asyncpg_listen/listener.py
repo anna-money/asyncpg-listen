@@ -181,9 +181,9 @@ class NotificationListener:
 
     async def _process_notification(self, handler: NotificationHandler, notification: NotificationOrTimeout) -> None:
         if self._tracer is None:
-            self._tracer = opentelemetry.trace.get_tracer(__package__)
+            self._tracer = opentelemetry.trace.get_tracer(__package__)  # type: ignore
         if self._meter is None:
-            self._meter = opentelemetry.metrics.get_meter(__package__)
+            self._meter = opentelemetry.metrics.get_meter(__package__)  # type: ignore
         if self._notification_histogram is None:
             self._notification_histogram = self._meter.create_histogram("asyncpg_listener_latency")
 

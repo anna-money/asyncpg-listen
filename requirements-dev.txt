@@ -7,7 +7,7 @@ flake8==7.1.1
 pyright==1.1.378
 black==24.8.0
 asyncpg==0.29.0
-async-timeout==4.0.2; python_version<"3.12"
+async-timeout==4.0.3; python_version<"3.12"
 setuptools==74.0.0
 wheel==0.44.0
 twine==5.1.1

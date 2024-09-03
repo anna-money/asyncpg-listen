@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import dataclasses
 import enum
 import logging
@@ -64,38 +63,24 @@ class NotificationListener:
         queue_per_channel: dict[str, asyncio.Queue[Notification]] = {
             channel: asyncio.Queue() for channel in handler_per_channel.keys()
         }
-
-        read_notifications_task = asyncio.create_task(
-            self._read_notifications(
-                queue_per_channel=queue_per_channel, check_interval=max(1.0, notification_timeout / 3.0)
-            ),
-            name=__package__,
-        )
-        process_notifications_tasks = [
-            asyncio.create_task(
-                self._process_notifications(
-                    channel,
-                    notifications=queue_per_channel[channel],
-                    handler=handler,
-                    policy=policy,
-                    notification_timeout=notification_timeout,
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(
+                self._read_notifications(
+                    queue_per_channel=queue_per_channel, check_interval=max(1.0, notification_timeout / 3.0)
                 ),
-                name=f"{__package__}.{channel}",
+                name=__package__,
             )
-            for channel, handler in handler_per_channel.items()
-        ]
-        try:
-            await asyncio.gather(read_notifications_task, *process_notifications_tasks)
-        finally:
-            await self._cancel_and_await_tasks([read_notifications_task, *process_notifications_tasks])
-
-    @staticmethod
-    async def _cancel_and_await_tasks(tasks: list[asyncio.Task[None]]) -> None:
-        for t in tasks:
-            t.cancel()
-        for t in tasks:
-            with contextlib.suppress(asyncio.CancelledError):
-                await t
+            for channel, handler in handler_per_channel.items():
+                tg.create_task(
+                    self._process_notifications(
+                        channel,
+                        notifications=queue_per_channel[channel],
+                        handler=handler,
+                        policy=policy,
+                        notification_timeout=notification_timeout,
+                    ),
+                    name=f"{__package__}.{channel}",
+                )
 
     async def _process_notifications(
         self,

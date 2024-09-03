@@ -5,46 +5,33 @@ import enum
 import logging
 import sys
 import time
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
-
-import opentelemetry.metrics
-import opentelemetry.trace
-
-if sys.version_info < (3, 11, 0):
-    from async_timeout import timeout
-else:
-    from asyncio import timeout  # type: ignore
+from typing import Any, Callable, Coroutine
 
 import asyncpg
+import opentelemetry.metrics
+import opentelemetry.trace
 
 logger = logging.getLogger(__package__)
 
 
-class ListenPolicy(str, enum.Enum):
+class ListenPolicy(enum.StrEnum):
     ALL = "ALL"
     LAST = "LAST"
 
-    def __str__(self) -> str:
-        return self.value
 
-
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Timeout:
-    __slots__ = ("channel",)
-
     channel: str
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Notification:
-    __slots__ = ("channel", "payload")
-
     channel: str
-    payload: Optional[str]
+    payload: str | None
 
 
 ConnectFunc = Callable[[], Coroutine[Any, Any, asyncpg.Connection]]
-NotificationOrTimeout = Union[Notification, Timeout]
+NotificationOrTimeout = Notification | Timeout
 NotificationHandler = Callable[[NotificationOrTimeout], Coroutine]
 
 NO_TIMEOUT: float = -1
@@ -69,12 +56,12 @@ class NotificationListener:
 
     async def run(
         self,
-        handler_per_channel: Dict[str, NotificationHandler],
+        handler_per_channel: dict[str, NotificationHandler],
         *,
         policy: ListenPolicy = ListenPolicy.ALL,
         notification_timeout: float = 30,
     ) -> None:
-        queue_per_channel: Dict[str, "asyncio.Queue[Notification]"] = {
+        queue_per_channel: dict[str, asyncio.Queue[Notification]] = {
             channel: asyncio.Queue() for channel in handler_per_channel.keys()
         }
 
@@ -103,7 +90,7 @@ class NotificationListener:
             await self._cancel_and_await_tasks([read_notifications_task, *process_notifications_tasks])
 
     @staticmethod
-    async def _cancel_and_await_tasks(tasks: "List[asyncio.Task[None]]") -> None:
+    async def _cancel_and_await_tasks(tasks: list[asyncio.Task[None]]) -> None:
         for t in tasks:
             t.cancel()
         for t in tasks:
@@ -114,7 +101,7 @@ class NotificationListener:
         self,
         channel: str,
         *,
-        notifications: "asyncio.Queue[Notification]",
+        notifications: asyncio.Queue[Notification],
         handler: NotificationHandler,
         policy: ListenPolicy,
         notification_timeout: float,
@@ -138,7 +125,7 @@ class NotificationListener:
                     notification = await notifications.get()
                 else:
                     try:
-                        async with timeout(notification_timeout):
+                        async with asyncio.timeout(notification_timeout):
                             notification = await notifications.get()
                     except asyncio.TimeoutError:
                         notification = Timeout(channel)
@@ -159,7 +146,7 @@ class NotificationListener:
                 logger.exception("Failed to handle %s", notification)
 
     async def _read_notifications(
-        self, queue_per_channel: Dict[str, "asyncio.Queue[Notification]"], check_interval: float
+        self, queue_per_channel: dict[str, asyncio.Queue[Notification]], check_interval: float
     ) -> None:
         failed_connect_attempts = 0
         while True:
@@ -182,7 +169,7 @@ class NotificationListener:
                 failed_connect_attempts += 1
 
     @staticmethod
-    def _get_push_callback(queue: "asyncio.Queue[Notification]") -> Callable[[Any, Any, Any, Any], None]:
+    def _get_push_callback(queue: asyncio.Queue[Notification]) -> Callable[[Any, Any, Any, Any], None]:
         def _push(_: Any, __: Any, channel: Any, payload: Any) -> None:
             queue.put_nowait(Notification(channel, payload))
 

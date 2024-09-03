@@ -1,7 +1,6 @@
 import collections
 import re
 import sys
-from typing import Tuple
 
 from .listener import (  # noqa
     NO_TIMEOUT,
@@ -15,7 +14,7 @@ from .listener import (  # noqa
     connect_func,
 )
 
-__all__: Tuple[str, ...] = (
+__all__: tuple[str, ...] = (
     # listener.py
     "NO_TIMEOUT",
     "ConnectFunc",

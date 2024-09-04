@@ -4,6 +4,7 @@
 * [Support python 3.12 and end support of 3.8](https://github.com/anna-money/asyncpg-listen/pull/211)
 * [End support of python 3.9 and 3.10](https://github.com/anna-money/asyncpg-listen/pull/215)
 * [Eagerly start notification processing with Python 3.12+](https://github.com/anna-money/asyncpg-listen/pull/212)
+* [Switch to asyncio.TaskGroup](https://github.com/anna-money/asyncpg-listen/pull/214)
 
 
 ## v0.0.6 (2022-11-02)

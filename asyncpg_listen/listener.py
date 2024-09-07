@@ -11,8 +11,8 @@ logger = logging.getLogger(__package__)
 
 
 class ListenPolicy(enum.StrEnum):
-    ALL = "ALL"
-    LAST = "LAST"
+    ALL = enum.auto()
+    LAST = enum.auto()
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

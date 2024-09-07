@@ -1,4 +1,4 @@
-## unreleased
+## v0.0.7 (2024-09-07)
 
 * [Support python 3.12 and end support of 3.8](https://github.com/anna-money/asyncpg-listen/pull/211)
 * [End support of python 3.9 and 3.10](https://github.com/anna-money/asyncpg-listen/pull/215)

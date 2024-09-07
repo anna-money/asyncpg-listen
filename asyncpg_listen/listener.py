@@ -3,12 +3,9 @@ import dataclasses
 import enum
 import logging
 import sys
-import time
 from typing import Any, Callable, Coroutine
 
 import asyncpg
-import opentelemetry.metrics
-import opentelemetry.trace
 
 logger = logging.getLogger(__package__)
 
@@ -44,14 +41,14 @@ def connect_func(*args: Any, **kwargs: Any) -> ConnectFunc:
 
 
 class NotificationListener:
-    __slots__ = ("_connect", "_reconnect_delay", "_tracer", "_meter", "_notification_histogram")
+    __slots__ = (
+        "__connect",
+        "__reconnect_delay",
+    )
 
     def __init__(self, connect: ConnectFunc, reconnect_delay: float = 5) -> None:
-        self._reconnect_delay = reconnect_delay
-        self._connect = connect
-        self._tracer = None
-        self._meter = None
-        self._notification_histogram = None
+        self.__reconnect_delay = reconnect_delay
+        self.__connect = connect
 
     async def run(
         self,
@@ -65,14 +62,14 @@ class NotificationListener:
         }
         async with asyncio.TaskGroup() as tg:
             tg.create_task(
-                self._read_notifications(
+                self.__read_notifications(
                     queue_per_channel=queue_per_channel, check_interval=max(1.0, notification_timeout / 3.0)
                 ),
                 name=__package__,
             )
             for channel, handler in handler_per_channel.items():
                 tg.create_task(
-                    self._process_notifications(
+                    self.__process_notifications(
                         channel,
                         notifications=queue_per_channel[channel],
                         handler=handler,
@@ -82,8 +79,8 @@ class NotificationListener:
                     name=f"{__package__}.{channel}",
                 )
 
-    async def _process_notifications(
-        self,
+    @staticmethod
+    async def __process_notifications(
         channel: str,
         *,
         notifications: asyncio.Queue[Notification],
@@ -91,6 +88,8 @@ class NotificationListener:
         policy: ListenPolicy,
         notification_timeout: float,
     ) -> None:
+        # to have independent async context per run
+        # to protect from misuse of contextvars
         if sys.version_info >= (3, 12):
             loop = asyncio.get_running_loop()
 
@@ -124,23 +123,21 @@ class NotificationListener:
                 continue
 
             try:
-                # to have independent async context per run
-                # to protect from misuse of contextvars
-                await run_coro(self._process_notification(handler, notification))
+                await run_coro(handler(notification))
             except Exception:
                 logger.exception("Failed to handle %s", notification)
 
-    async def _read_notifications(
+    async def __read_notifications(
         self, queue_per_channel: dict[str, asyncio.Queue[Notification]], check_interval: float
     ) -> None:
         failed_connect_attempts = 0
         while True:
             try:
-                connection = await self._connect()
+                connection = await self.__connect()
                 failed_connect_attempts = 0
                 try:
                     for channel, queue in queue_per_channel.items():
-                        await connection.add_listener(channel, self._get_push_callback(queue))
+                        await connection.add_listener(channel, self.__get_push_callback(queue))
 
                     while True:
                         await asyncio.sleep(check_interval)
@@ -150,43 +147,12 @@ class NotificationListener:
             except Exception:
                 logger.exception("Connection was lost or not established")
 
-                await asyncio.sleep(self._reconnect_delay * failed_connect_attempts)
+                await asyncio.sleep(self.__reconnect_delay * failed_connect_attempts)
                 failed_connect_attempts += 1
 
     @staticmethod
-    def _get_push_callback(queue: asyncio.Queue[Notification]) -> Callable[[Any, Any, Any, Any], None]:
+    def __get_push_callback(queue: asyncio.Queue[Notification]) -> Callable[[Any, Any, Any, Any], None]:
         def _push(_: Any, __: Any, channel: Any, payload: Any) -> None:
             queue.put_nowait(Notification(channel, payload))
 
         return _push
-
-    async def _process_notification(self, handler: NotificationHandler, notification: NotificationOrTimeout) -> None:
-        if self._tracer is None:
-            self._tracer = opentelemetry.trace.get_tracer(__package__)  # type: ignore
-        if self._meter is None:
-            self._meter = opentelemetry.metrics.get_meter(__package__)  # type: ignore
-        if self._notification_histogram is None:
-            self._notification_histogram = self._meter.create_histogram("asyncpg_listener_latency")
-
-        start_time = time.time_ns()
-
-        with self._tracer.start_as_current_span(
-            name=self._get_span_name(notification),
-            kind=opentelemetry.trace.SpanKind.INTERNAL,
-            start_time=start_time,
-            attributes={"channel": notification.channel},
-        ):
-            try:
-                await handler(notification)
-            finally:
-                elapsed = max(0, time.time_ns() - start_time)
-                self._notification_histogram.record(elapsed, {"channel": notification.channel})
-
-    @staticmethod
-    def _get_span_name(notification: NotificationOrTimeout) -> str:
-        if isinstance(notification, Timeout):
-            return f"Notification timeout #{notification.channel}"
-        if isinstance(notification, Notification):
-            return f"Notification #{notification.channel}"
-
-        raise TypeError(f"Unexpected notification type: {type(notification)}")

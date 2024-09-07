@@ -11,4 +11,3 @@ asyncpg==0.29.0
 setuptools==74.0.0
 wheel==0.44.0
 twine==5.1.1
-opentelemetry-api>=1.19

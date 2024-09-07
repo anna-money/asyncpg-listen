@@ -5,7 +5,6 @@ from setuptools import setup
 
 install_requires = [
     "asyncpg>=0.27.0",
-    "opentelemetry-api>=1.19",
 ]
 
 

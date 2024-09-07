@@ -67,7 +67,7 @@ class TcpProxy:
 
         self.connections.add(server_writer)
         self.connections.add(client_writer)
-        
+
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self._pipe(server_reader, client_writer))
             tg.create_task(self._pipe(client_reader, server_writer))

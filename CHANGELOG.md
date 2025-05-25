@@ -1,3 +1,8 @@
+## v0.0.8 (2025-05-25)
+
+* Support python 3.13
+
+
 ## v0.0.7 (2024-09-07)
 
 * [Support python 3.12 and end support of 3.8](https://github.com/anna-money/asyncpg-listen/pull/211)

@@ -21,7 +21,7 @@ test:
 	@python3 -m pytest -vv --rootdir tests .
 
 pyenv:
-	echo asyncpg-listen > .python-version && pyenv install -s 3.12 && pyenv virtualenv -f 3.12 asyncpg-listen
+	echo asyncpg-listen > .python-version && pyenv install -s 3.11 && pyenv virtualenv -f 3.11 asyncpg-listen
 
 pyenv-delete:
 	pyenv virtualenv-delete -f asyncpg-listen

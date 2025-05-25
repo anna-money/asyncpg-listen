@@ -27,7 +27,7 @@ __all__: tuple[str, ...] = (
     "connect_func",
 )
 
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 
 version = f"{__version__}, Python {sys.version}"
 

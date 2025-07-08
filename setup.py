@@ -4,7 +4,7 @@ from pathlib import Path
 from setuptools import setup
 
 install_requires = [
-    "asyncpg>=0.27.0",
+    "asyncpg>=0.30.0",
 ]
 
 

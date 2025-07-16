@@ -1,4 +1,4 @@
-## unreleased
+## v0.0.9 (2025-07-16)
 
 # [SELECT 1 only if we haven't seen any events](https://github.com/anna-money/asyncpg-listen/pull/222)
 # [No need to wait for a connection closure](https://github.com/anna-money/asyncpg-listen/pull/223)

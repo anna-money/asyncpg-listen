@@ -46,11 +46,13 @@ class NotificationListener:
     __slots__ = (
         "__connect",
         "__reconnect_delay",
+        "__tasks",
     )
 
     def __init__(self, connect: ConnectFunc, reconnect_delay: float = 5) -> None:
         self.__reconnect_delay = reconnect_delay
         self.__connect = connect
+        self.__tasks = set()
 
     async def run(
         self,
@@ -155,7 +157,9 @@ class NotificationListener:
                             await asyncio.sleep(per_attempt_keep_alive_budget - elapsed)
                     logger.warning("Connection was lost")
                 finally:
-                    await asyncio.shield(connection.close())
+                    close_task = asyncio.create_task(connection.close())
+                    close_task.add_done_callback(self.__tasks.discard)
+                    self.__tasks.add(close_task)
             except Exception:
                 if failed_connect_attempts < MAX_SILENCED_FAILED_CONNECT_ATTEMPTS:
                     logger.warning("Connection was lost or not established", exc_info=True)

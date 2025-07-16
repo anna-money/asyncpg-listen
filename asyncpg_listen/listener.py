@@ -32,6 +32,7 @@ NotificationOrTimeout = Notification | Timeout
 NotificationHandler = Callable[[NotificationOrTimeout], Coroutine]
 
 NO_TIMEOUT: float = -1
+MAX_SILENCED_FAILED_CONNECT_ATTEMPTS = 3
 
 
 def connect_func(*args: Any, **kwargs: Any) -> ConnectFunc:
@@ -157,7 +158,7 @@ class NotificationListener:
                 finally:
                     await asyncio.shield(connection.close())
             except Exception:
-                if failed_connect_attempts < MAX_FAILED_CONNECT_ATTEMPTS:
+                if failed_connect_attempts < MAX_SILENCED_FAILED_CONNECT_ATTEMPTS:
                     logger.warning("Connection was lost or not established", exc_info=True)
                 else:
                     logger.exception("Connection was lost or not established")

@@ -150,7 +150,8 @@ class NotificationListener:
                             await connection.execute("SELECT 1", timeout=per_attempt_keep_alive_budget)
                         event.clear()
                         finished_at = time.monotonic()
-                        if (elapsed := finished_at - started_at) and elapsed < per_attempt_keep_alive_budget:
+                        elapsed = finished_at - started_at
+                        if elapsed < per_attempt_keep_alive_budget:
                             await asyncio.sleep(per_attempt_keep_alive_budget - elapsed)
                     logger.warning("Connection was lost")
                 finally:

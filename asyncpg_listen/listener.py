@@ -157,7 +157,7 @@ class NotificationListener:
                 finally:
                     await asyncio.shield(connection.close())
             except Exception:
-                if failed_connect_attempts < 3:
+                if failed_connect_attempts < MAX_FAILED_CONNECT_ATTEMPTS:
                     logger.warning("Connection was lost or not established", exc_info=True)
                 else:
                     logger.exception("Connection was lost or not established")

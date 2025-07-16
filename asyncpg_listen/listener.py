@@ -3,6 +3,7 @@ import dataclasses
 import enum
 import logging
 import sys
+import time
 from typing import Any, Callable, Coroutine
 
 import asyncpg
@@ -44,6 +45,7 @@ class NotificationListener:
     __slots__ = (
         "__connect",
         "__reconnect_delay",
+        "__tasks",
     )
 
     def __init__(self, connect: ConnectFunc, reconnect_delay: float = 5) -> None:
@@ -63,7 +65,8 @@ class NotificationListener:
         async with asyncio.TaskGroup() as tg:
             tg.create_task(
                 self.__read_notifications(
-                    queue_per_channel=queue_per_channel, check_interval=max(1.0, notification_timeout / 3.0)
+                    queue_per_channel=queue_per_channel,
+                    notification_timeout=notification_timeout,
                 ),
                 name=__package__,
             )
@@ -128,31 +131,44 @@ class NotificationListener:
                 logger.exception("Failed to handle %s", notification)
 
     async def __read_notifications(
-        self, queue_per_channel: dict[str, asyncio.Queue[Notification]], check_interval: float
+        self, queue_per_channel: dict[str, asyncio.Queue[Notification]], notification_timeout: float
     ) -> None:
         failed_connect_attempts = 0
+        per_attempt_keep_alive_budget = max(1.0, notification_timeout / 3.0)
         while True:
             try:
                 connection = await self.__connect()
                 failed_connect_attempts = 0
                 try:
+                    event = asyncio.Event()
                     for channel, queue in queue_per_channel.items():
-                        await connection.add_listener(channel, self.__get_push_callback(queue))
+                        await connection.add_listener(channel, self.__get_push_callback(queue, event))
 
-                    while True:
-                        await asyncio.sleep(check_interval)
-                        await connection.execute("SELECT 1")
+                    while not connection.is_closed():
+                        started_at = time.monotonic()
+                        if not event.is_set():
+                            await connection.execute("SELECT 1", timeout=per_attempt_keep_alive_budget)
+                        event.clear()
+                        finished_at = time.monotonic()
+                        if (elapsed := finished_at - started_at) and elapsed < per_attempt_keep_alive_budget:
+                            await asyncio.sleep(per_attempt_keep_alive_budget - elapsed)
+                    logger.warning("Connection was lost")
                 finally:
                     await asyncio.shield(connection.close())
             except Exception:
-                logger.exception("Connection was lost or not established")
-
+                if failed_connect_attempts < 3:
+                    logger.warning("Connection was lost or not established", exc_info=True)
+                else:
+                    logger.exception("Connection was lost or not established")
                 await asyncio.sleep(self.__reconnect_delay * failed_connect_attempts)
                 failed_connect_attempts += 1
 
     @staticmethod
-    def __get_push_callback(queue: asyncio.Queue[Notification]) -> Callable[[Any, Any, Any, Any], None]:
+    def __get_push_callback(
+        queue: asyncio.Queue[Notification], event: asyncio.Event
+    ) -> Callable[[Any, Any, Any, Any], None]:
         def _push(_: Any, __: Any, channel: Any, payload: Any) -> None:
             queue.put_nowait(Notification(channel, payload))
+            event.set()
 
         return _push

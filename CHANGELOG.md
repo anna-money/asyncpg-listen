@@ -1,3 +1,8 @@
+## unreleased
+
+# [SELECT 1 only if we haven't seen any events](https://github.com/anna-money/asyncpg-listen/pull/222)
+
+
 ## v0.0.8 (2025-05-25)
 
 * Support python 3.13

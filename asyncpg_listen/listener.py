@@ -46,7 +46,6 @@ class NotificationListener:
     __slots__ = (
         "__connect",
         "__reconnect_delay",
-        "__tasks",
     )
 
     def __init__(self, connect: ConnectFunc, reconnect_delay: float = 5) -> None:

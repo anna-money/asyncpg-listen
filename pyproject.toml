@@ -1,0 +1,83 @@
+[project]
+name = "asyncpg-listen"
+dynamic = ["version"]
+description = "Helps to use PostgreSQL listen/notify with asyncpg"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Yury Pliner", email = "yury.pliner@gmail.com"}]
+requires-python = ">=3.11"
+dependencies = [
+    "asyncpg>=0.27.0",
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Environment :: Web Environment",
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: AsyncIO",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/anna-money/asyncpg-listen"
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.0.2",
+    "pytest-asyncio==1.3.0",
+    "pytest-pg==0.0.28",
+    "ruff==0.14.10",
+    "pyright==1.1.407",
+    "asyncpg==0.31.0",
+]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.wheel]
+packages = ["asyncpg_listen"]
+
+[tool.pytest.ini_options]
+norecursedirs = [".git", ".venv"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["SIM", "C4", "ANN", "N", "LOG", "G", "F", "E", "W", "Q", "I", "UP", "T20", "COM", "RSE", "RET", "ISC", "ASYNC", "SLOT", "RUF", "DTZ"]
+ignore = ["COM812", "ISC001", "ASYNC109", "RUF018", "RUF022", "ANN401", "ANN204", "E501"]
+
+
+[tool.pyright]
+include = ["asyncpg_listen", "tests"]
+pythonVersion = "3.11"
+pythonPlatform = "All"
+stubPath = ""
+typeCheckingMode = "strict"
+useLibraryCodeForTypes = true
+reportPrivateImportUsage = false
+reportMissingTypeStubs = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnknownLambdaType = false
+reportUnknownArgumentType = false
+reportUnknownParameterType = false
+reportUntypedFunctionDecorator = false
+reportUnusedImport = false
+reportMissingTypeArgument = false
+reportImportCycles = false
+reportDeprecated = false

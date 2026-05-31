@@ -4,7 +4,8 @@ import enum
 import logging
 import sys
 import time
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 import asyncpg
 
@@ -62,7 +63,7 @@ class NotificationListener:
         notification_timeout: float = 30,
     ) -> None:
         queue_per_channel: dict[str, asyncio.Queue[Notification]] = {
-            channel: asyncio.Queue() for channel in handler_per_channel.keys()
+            channel: asyncio.Queue() for channel in handler_per_channel
         }
         async with asyncio.TaskGroup() as tg:
             tg.create_task(
@@ -116,7 +117,7 @@ class NotificationListener:
                     try:
                         async with asyncio.timeout(notification_timeout):
                             notification = await notifications.get()
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         notification = Timeout(channel)
             else:
                 while not notifications.empty():

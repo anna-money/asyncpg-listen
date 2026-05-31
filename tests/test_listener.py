@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 import asyncpg
 import pytest
